@@ -1,13 +1,27 @@
 %python
-import warnings, os, shutil
+import warnings, os, shutil, random
 warnings.filterwarnings("ignore")
 import pandas as pd
 import numpy as np
+import torch
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import roc_auc_score
 from scipy import stats
 from be_great import GReaT
+from transformers import set_seed as _hf_set_seed
+
+
+def seed_everything(seed: int) -> None:
+    """Seed Python / NumPy / PyTorch / CUDA / transformers / cuDNN for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    _hf_set_seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
 
 TARGET    = "target"
 SEEDS     = [42, 123, 7, 2024, 999]
@@ -50,7 +64,7 @@ for n_train in SMALL_NS:
             print(f"  seed={seed} already done, skipping", flush=True)
             continue
 
-        np.random.seed(seed)
+        seed_everything(seed)
         df_tr = df_pool.sample(min(n_train, len(df_pool)),
                                random_state=seed).reset_index(drop=True)
         X_tr = df_tr.drop(columns=[TARGET]).values.astype(float)
