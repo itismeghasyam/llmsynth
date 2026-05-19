@@ -32,6 +32,8 @@ All key findings are backed by **5-seed cross-validation** (seeds 42, 123, 7, 20
 - `ci_great_hillstrom.csv` — GReaT GPT-2 on Hillstrom, n ∈ {50,100,200,500,1000,2000}, holdout=10K
 - `great_german_results.csv` — GReaT GPT-2 vs Baseline on German Credit, n ∈ {50,100,200,500}, holdout=200 (GPU run, 5-seed CI)
 - `great_telco_results.csv` — GReaT GPT-2 vs Baseline on Telco Churn, n ∈ {50,100,200,500,1000,2000}, holdout=2000 (GPU run, 5-seed CI)
+- `great_alpha_sweep_{german,telco,hillstrom}_results.csv` — Phase 5 α-sweep at small-n shoulder (n ∈ {50,100,200}, α ∈ {0.1,0.2,0.3,0.5,1.0}, 5 seeds, matched-design)
+- `alpha_sweep_rigorous_analysis.csv` — per-cell paired stats (Δ, CI, d_z, raw p, BH-FDR p over 45-test family) for the α-sweep
 - `ucurve_*.png` — U-shaped augmentation curves
 - `lowdata_*.png` — performance vs. training set size
 - `summary_table.csv` — cross-dataset summary including GReaT results

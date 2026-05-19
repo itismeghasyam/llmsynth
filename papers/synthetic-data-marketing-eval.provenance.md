@@ -173,7 +173,21 @@ Per the pre-registered improvement plan (`papers/improvement_plan.md`), §6.6 GR
 - `results/rigorous_analysis.csv` — tidy per-cell statistics (16 paired tests)
 - `results/rigorous_analysis.md` — human-readable summary
 
-Findings significant after BH-FDR at q=0.10: Hillstrom n=2000 (p_FDR=0.010); German n=100 (p_FDR=0.058), n=500 (p_FDR=0.074); Telco n=50 (p_FDR=0.074), n=2000 (p_FDR=0.074). All other cells are not paired-significant after FDR. The Telco n=50 finding (paper headline) survives BH-FDR at q=0.10 but would not survive Bonferroni; jackknife sign-stable.
+Findings significant after BH-FDR at q=0.10 in Phase 1: Hillstrom n=2000 (p_FDR=0.010); German n=100 (p_FDR=0.058), n=500 (p_FDR=0.074); Telco n=50 (p_FDR=0.074), n=2000 (p_FDR=0.074). All other cells are not paired-significant after FDR. The Telco n=50 finding survived BH-FDR at q=0.10 in Phase 1; subsequent Phase 5 replication weakened it (see below).
+
+## §6.6 α-Sweep (Phase 5, 2026-05-18/19)
+
+Pre-registered as Phase 5; extended to all three datasets after the German α-sweep result. Outputs:
+
+- `experiments/run_great_alpha_sweep_{german,telco,hillstrom}_databricks.py` — generation scripts (with `seed_everything()` patch)
+- `results/great_alpha_sweep_{german,telco,hillstrom}_results.csv` — raw per-seed AUCs (90 rows each)
+- `results/alpha_sweep_rigorous_analysis.csv` — per-cell paired stats with BH-FDR over 45-test family
+
+**Headline α-sweep finding:** German Credit n=100, α=0.1 — Δ=+1.69 pts, d_z=2.45, raw paired p=0.005, 5/5 seeds GReaT-positive. Contradicts the Phase 1 α=1.0 "anonymized features undermine LLM priors" interpretation. BH-FDR p=0.104 over the 45-test family — borderline.
+
+**GReaT-fit variance natural experiment:** Comparing α=1.0 results across Phase 1 and Phase 5 on the same seeds (Baseline AUCs match bit-exact; GReaT AUCs differ): drift up to 4.6 pp per seed on identical training data; Telco n=50 paired-significance lost (p=0.023→0.134); Hillstrom n=50 directional positive flipped sign. Root cause: user-level seed controls NumPy/sklearn only; PyTorch/CUDA/Transformers RNGs were not seeded in the Phase 1 / Phase 5 runs.
+
+**Scripts subsequently patched** with `seed_everything()` to seed all upstream RNGs going forward; `fp16=True` retained to match canonical runs, so residual GPU-reduction non-determinism remains (fp32 would be required for bit-exact reproducibility).
 
 ---
 

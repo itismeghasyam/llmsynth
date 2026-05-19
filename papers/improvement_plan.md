@@ -113,16 +113,22 @@ The paper's §6.6 will mark confirmatory vs exploratory findings explicitly afte
 
 ---
 
-## 7. Optional Phase 5 — Methods-venue extras
+## 7. Phase 5 — α-sweep across all three datasets [COMPLETED 2026-05-18/19]
 
-**Skip if:** targeting practitioner, applied ML, or workshop venues.
-**Do if:** targeting NeurIPS/ICML/ICLR main track.
+Extended beyond the original "Telco only" Methods-venue scoping after the German α-sweep result (Δ=+1.69 pts at n=100, α=0.1; raw p=0.005, d_z=2.45) showed α=1.0 is suboptimal universally and contradicted the §6.6 main-table interpretation.
 
-| # | Task | Cost | Worth it for |
-|---|---|---|---|
-| 5.1 | α-sweep at small-n Telco {0.1, 0.2, 0.3, 0.5, 1.0} (cheap if 2.1 done — sampling only) | ~10 GPU hrs | Methods venue |
-| 5.2 | Multiple downstream classifiers (LR, RF, MLP) at small-n (free if 2.1 done) | ~0 GPU hrs | Methods venue |
-| 5.3 | TabDDPM/TabSyn baseline comparison | 50+ GPU hrs, weeks of new engineering | Methods venue only |
+**What was run:** α-sweep across all three datasets at n ∈ {50, 100, 200} × α ∈ {0.1, 0.2, 0.3, 0.5, 1.0} × 5 seeds (matched-design, same GReaT fit per (n, seed), sub-sample synthetic for each α). Three scripts: `experiments/run_great_alpha_sweep_{dataset}_databricks.py`.
+
+**Key findings (incorporated into paper §6.6 Experiment 5):**
+- α=1.0 universally suboptimal: best α was 0.1 (4 cells), 0.2 (3), 0.3 (2), 1.0 (1).
+- Strongest single positive cell: German Credit n=100, α=0.1 (Δ=+1.69 pts, d_z=2.45, raw p=0.005). BH-FDR over the 45-test family: p=0.104 (just over q=0.10).
+- No α-sweep cell survives BH-FDR at q=0.10 over the 45-test family.
+- α-sweep at α=1.0 vs Phase 1 results = natural experiment for GReaT-fit variance: drift up to 4.6 pp, Telco n=50 headline lost paired significance (p=0.023→0.134), Hillstrom n=50 flipped sign. Documents that user-level `seed` controls NumPy/sklearn only; PyTorch/CUDA/Transformers RNGs are independent.
+- Patch applied to all six GReaT scripts: `seed_everything()` covering Python random, NumPy, PyTorch CPU+CUDA, Transformers, cuDNN-deterministic + benchmark-off + CUBLAS_WORKSPACE_CONFIG. fp16 retained; full bit-exact reproducibility would also require fp32.
+
+**Still-optional Phase 5 sub-tasks (not run):**
+- Multiple downstream classifiers (LR, RF, MLP). Would test classifier-robustness; not run.
+- TabDDPM/TabSyn baseline comparison (50+ GPU hrs, weeks of engineering). Not run.
 
 ---
 
