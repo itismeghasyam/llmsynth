@@ -159,9 +159,9 @@ The Nomao sparse condition (n = 500, 70% simulated missing features) combines th
 | Condition | Baseline AUC | Best augmented AUC | Best generator | Gain |
 |---|---|---|---|---|
 | Nomao sparse (70% missing) | 0.897 ± 0.062 | 0.902 ± —  | CTGAN α=0.1 | +0.50 pts |
-| Nomao dense reference | 0.972 ± —  | — | — | (separate baseline) |
+| Nomao dense reference | 0.992 ± —  | — | — | (separate baseline) |
 
-The dense baseline (last row) is reported for context: with all features present, the same classifier reaches AUC = 0.972, a 7.45-point gain over the sparse baseline. Augmentation closes none of this gap meaningfully. The finding is consistent with the imbalance hypothesis: sparsity-driven baseline degradation is not the failure mode synthetic augmentation addresses. Augmentation needs minority-class data starvation, not feature-information starvation, to deliver value.
+The dense baseline (last row) is reported for context: with all features present, the same classifier reaches AUC = 0.992, a 9.44-point gain over the sparse baseline. Augmentation closes none of this gap meaningfully. The finding is consistent with the imbalance hypothesis: sparsity-driven baseline degradation is not the failure mode synthetic augmentation addresses. Augmentation needs minority-class data starvation, not feature-information starvation, to deliver value.
 
 ### 4.4 Marketing Datasets: Strong Gains Under Extreme Imbalance
 
