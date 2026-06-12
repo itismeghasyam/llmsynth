@@ -132,7 +132,8 @@ def fit_and_sample(df_tr, n_samples, llm_model, batch_size, epochs, ckpt_dir):
         llm=llm_model,
         batch_size=batch_size,
         epochs=epochs,
-        fp16=True,
+        fp16=False,
+        bf16=True,    # H100 native; fp16 AMP not implemented on H100
         gradient_accumulation_steps=GRADIENT_ACCUM_STEPS,
         experiment_dir=ckpt_dir,
         logging_steps=1,
