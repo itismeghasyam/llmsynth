@@ -29,8 +29,16 @@
 #   EleutherAI/gpt-j-6b         → A10G (16GB) or T4 (tight)
 #   EleutherAI/gpt-neo-2.7B     → T4 (16GB) safe fallback
 
-import warnings, os, shutil, random
+import subprocess, sys, warnings, os, shutil, random
 warnings.filterwarnings("ignore")
+
+# Auto-install dependencies if missing
+for pkg, import_name in [("bitsandbytes", "bitsandbytes"), ("peft", "peft")]:
+    try:
+        __import__(import_name)
+    except ImportError:
+        print(f"Installing {pkg}...", flush=True)
+        subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])
 
 # Suppress HuggingFace unauthenticated warning for public models
 os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
