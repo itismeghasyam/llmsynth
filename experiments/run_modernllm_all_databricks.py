@@ -31,6 +31,11 @@
 
 import warnings, os, shutil, random
 warnings.filterwarnings("ignore")
+
+# Suppress HuggingFace unauthenticated warning for public models
+os.environ.setdefault("TRANSFORMERS_VERBOSITY", "error")
+os.environ.setdefault("HF_HUB_DISABLE_IMPLICIT_TOKEN", "1")
+
 import pandas as pd
 import numpy as np
 import torch
@@ -173,7 +178,10 @@ def run_dataset(cfg):
     out_smalln = cfg["out_smalln"]
     if os.path.exists(out_smalln):
         rows1 = pd.read_csv(out_smalln).to_dict("records")
-        done1 = {(r["n"], r["seed"]) for r in rows1 if r["method"] == "Baseline"}
+        # Only skip if ModernLLM succeeded — Baseline-only row means LLM failed, must retry
+        done1 = {(int(r["n"]), r["seed"]) for r in rows1
+                 if r["method"] == "ModernLLM" and pd.notna(r.get("auc"))}
+        print(f"  Part 1 resume: {len(done1)} successful LLM pairs", flush=True)
     else:
         rows1, done1 = [], set()
 
@@ -225,8 +233,11 @@ def run_dataset(cfg):
     out_alpha = cfg["out_alpha"]
     if os.path.exists(out_alpha):
         rows2 = pd.read_csv(out_alpha).to_dict("records")
-        done2 = {(r["n"], r["seed"]) for r in rows2
-                 if r["method"] == "Baseline" and r["alpha"] == 0.0}
+        # Only skip if ModernLLM at max alpha succeeded (last alpha = fully done)
+        done2 = {(int(r["n"]), r["seed"]) for r in rows2
+                 if r["method"] == "ModernLLM" and r.get("alpha") == max(ALPHAS)
+                 and pd.notna(r.get("auc"))}
+        print(f"  Part 2 resume: {len(done2)} successful LLM pairs", flush=True)
     else:
         rows2, done2 = [], set()
 
