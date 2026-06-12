@@ -122,23 +122,42 @@ def ci95(values):
 def fit_and_sample(df_tr, n_samples, llm_model, batch_size, epochs, ckpt_dir):
     """Fit GReaT with modern LLM (full fine-tuning) and return n_samples synthetic rows.
 
-    Same protocol as original GReaT paper — all weights updated.
-    H100 80GB fits Mistral-7B full fine-tuning comfortably.
+    Memory budget on H100 80GB for Mistral-7B:
+      Model bf16:          14 GB
+      Gradients bf16:      14 GB
+      8-bit Adam states:   14 GB  (vs 56 GB with standard fp32 Adam)
+      Activations:         ~3 GB
+      Total:              ~45 GB  → fits H100 comfortably
+
+    Requires: %pip install bitsandbytes
     """
     if os.path.exists(ckpt_dir):
         shutil.rmtree(ckpt_dir)
 
-    model = GReaT(
-        llm=llm_model,
-        batch_size=batch_size,
-        epochs=epochs,
-        fp16=False,
-        bf16=True,    # H100 native; fp16 AMP not implemented on H100
-        gradient_accumulation_steps=GRADIENT_ACCUM_STEPS,
-        experiment_dir=ckpt_dir,
-        logging_steps=1,
-        logging_strategy="epoch",
-    )
+    # Load model in bf16 (GReaT defaults to fp32)
+    import transformers as _tr
+    _orig = _tr.AutoModelForCausalLM.from_pretrained
+    def _bf16_loader(name, **kw):
+        kw.setdefault("torch_dtype", torch.bfloat16)
+        kw.setdefault("device_map", "auto")
+        return _orig(name, **kw)
+    _tr.AutoModelForCausalLM.from_pretrained = _bf16_loader
+
+    try:
+        model = GReaT(
+            llm=llm_model,
+            batch_size=batch_size,
+            epochs=epochs,
+            fp16=False,
+            bf16=True,
+            optim="adamw_bnb_8bit",   # 8-bit Adam: cuts optimizer states 14GB vs 56GB
+            gradient_accumulation_steps=GRADIENT_ACCUM_STEPS,
+            experiment_dir=ckpt_dir,
+            logging_steps=1,
+            logging_strategy="epoch",
+        )
+    finally:
+        _tr.AutoModelForCausalLM.from_pretrained = _orig
     print(f"  [fit]", end="", flush=True)
     model.fit(df_tr)
     print(f"  [sample n={n_samples}]", end="", flush=True)
