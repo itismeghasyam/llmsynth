@@ -494,7 +494,19 @@ Four secondary findings warrant emphasis. First, TabDDPM underperforms CTGAN on 
 
 The practitioner-facing recommendation is simple. For data-scarce imbalanced regimes at the positive rates tested here (n_real ≈ 10,000, positive rates of 0.9% and 0.2%), CTGAN consistently achieved the largest gains in this study across datasets, seeds, and classifiers. The precise threshold below which augmentation reliably helps is not established by this study — the 1%–10% range is unsampled. We recommend evaluating it at α ∈ {0.1, 0.3} with a 5-point sweep for validation. Note that the individual per-dataset comparisons are directional but underpowered for FDR significance at 5–10 seeds; the cross-dataset regression (R²=0.92, p=0.0023) is the primary statistical support. For positive rates above 10%, skip augmentation: no generator exceeded +0.27 AUC points in this study. We benchmarked `class_weight='balanced'` on both marketing datasets: it hurts on Hillstrom (−1.80 pts) and underperforms CTGAN by +7.55 pts on both datasets. Synthetic augmentation delivers gains the cost-sensitive alternative cannot. For imbalanced marketing classification within the tested regime, the observed generator ranking is CTGAN ≈ SMOTE > TabDDPM > GaussianCopula > GReaT.
 
-Future work should: (1) fill the 1%–10% positive-rate gap with one or more datasets to establish where the transition from negligible to meaningful augmentation gains occurs — the present study has two treatment datasets at 0.9% and 0.2% and four control datasets at 11.7%+, leaving the transition region unsampled; (2) extend to causal/uplift settings (where augmentation may corrupt counterfactual structure); (3) evaluate CLV classification and attribution tasks; and (4) test class-conditional variants of TabDDPM (e.g., TabSyn) that may close the architectural gap identified in §5.2.
+**Future work** falls across three tiers directly connected to this paper's contributions:
+
+**Tier 1 — Direct extensions (most important).**
+*(1) Characterizing the 1%–10% transition region.* The present study observes substantial gains at 0.2% and 0.9% positive rates and negligible gains at 11.7% and above. Future work should establish where augmentation becomes beneficial by evaluating datasets in the currently unsampled 1%–10% range — ideally datasets where the positive rate can be controlled independently of total dataset size.
+*(2) Minority-example scarcity vs class imbalance.* Future work should disentangle positive rate from absolute minority-example count. A dataset with 1% positives and 1M rows may exhibit very different behavior from a dataset with 1% positives and 10k rows despite identical class imbalance. The present study cannot distinguish these because the 10k cap ties positive rate to minority count.
+*(3) Full-scale industrial datasets.* The present work focuses on the data-scarce regime (n ≤ 10k). Future work should evaluate whether augmentation remains beneficial on full-scale industrial datasets where the minority-class budget is substantially larger.
+
+**Tier 2 — Generator research.**
+*(4) Conditional diffusion models.* TabDDPM was evaluated in its standard unconditional formulation. Future work should investigate class-conditional diffusion architectures — TabSyn, TabDiff (Shi et al., 2025) — that explicitly target minority-class generation, which may close the gap with CTGAN identified in §4.5.
+*(5) Variance-aware benchmarking of LLM synthesizers.* Future work should develop evaluation protocols that separate dataset-sampling variance from generator-fit variance in LLM-based tabular synthesis, enabling more reliable benchmarking than the single-fit-per-cell protocol currently standard in the field.
+
+**Tier 3 — Marketing applications.**
+*(6) Causal/uplift marketing settings.* Future work should evaluate augmentation in uplift modeling and causal marketing settings, where synthetic generation may alter treatment effects and counterfactual structure in ways not captured by the classification utility metrics used here.
 
 ---
 
