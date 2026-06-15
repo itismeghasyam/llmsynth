@@ -60,7 +60,7 @@ Two gaps motivate the present study. First, neither benchmark separates the *imb
 
 ### 2.3 Class Imbalance as a Distinct Regime
 
-Class imbalance, particularly at positive rates below 5%, is qualitatively different from general data scarcity. The bottleneck is not total dataset size but the number of minority examples available to the classifier. At a 0.2% positive rate with 8,000 training rows, only 16 minority examples are expected per stratified split — and the variance in that count across splits is the primary driver of classifier instability. Synthetic augmentation in this regime is not primarily about increasing total dataset size; it is about densifying the minority-class region of feature space. This framing motivates our hypothesis that class imbalance is the dominant driver of augmentation value in the tested regime.
+Class imbalance, particularly at positive rates below 5%, is qualitatively different from general data scarcity (He & Garcia, 2009; Branco et al., 2016). The bottleneck is not total dataset size but the number of minority examples available to the classifier. At a 0.2% positive rate with 8,000 training rows, only 16 minority examples are expected per stratified split — and the variance in that count across splits is the primary driver of classifier instability. Synthetic augmentation in this regime is not primarily about increasing total dataset size; it is about densifying the minority-class region of feature space. This framing motivates our hypothesis that class imbalance is the dominant driver of augmentation value in the tested regime.
 
 ---
 
@@ -78,7 +78,7 @@ We selected seven publicly available classification datasets spanning the practi
 | Nomao Lead (full) | 10,000 | 28.3% | Lead generation | OpenML id=1486 | Control |
 | Nomao Lead (sparse, 70% missing) | 500 | 28.3% | Lead generation | OpenML id=1486 | Sparsity stress |
 | **Hillstrom Email Marketing** | **10,000** | **0.9%** | **Marketing** | MineThatData (2008) | **Treatment** |
-| **Criteo Display Advertising** | **10,000** | **0.2%** | **Advertising** | Criteo AI Lab (2018) | **Treatment** |
+| **Criteo Display Advertising** | **10,000** | **0.2%** | **Advertising** | Criteo AI Lab (Diemert et al., 2018) | **Treatment** |
 
 Datasets larger than 10,000 rows (Bank Marketing, Hillstrom, Criteo) are subsampled to the listed cap. The cap defines the scope of our claims: we study the data-scarce minority-class regime, in which the classifier bottleneck is class-conditional density estimation rather than total row count. At full dataset scale, the marginal value of synthetic rows is expected to be smaller, and our paper does not test that condition.
 
@@ -293,7 +293,7 @@ GReaT — the GPT-2-based tabular synthesizer — was evaluated on Hillstrom at 
 
 Two patterns are worth noting. First, a directional positive signal at small n (n = 50, 4/5 seeds win) decays monotonically with n and inverts to a robustly negative effect at n = 2000 (0/5 seeds win, paired p = 0.001). At 0.9% positive rate, the GReaT-generated synthetic rows dilute rather than enrich the minority-class signal as n grows — most generated rows are negative class regardless of LLM prior quality.
 
-Second, and more methodologically consequential: we performed a natural experiment by running GReaT a second time on the same (n, seed) pairs as part of an unrelated α-sweep experiment. The two independent fits produced per-seed AUC differences of up to 12 percentage points on identical training data. Investigation traces the root cause to incomplete seeding: user-level `random_state` controls NumPy and scikit-learn random state, but PyTorch, CUDA, and Hugging Face Transformers maintain independent random states, and `fp16=True` GPU reductions remain non-deterministic even after `seed_everything()` is applied to all of these. The implication for the field is that published GReaT benchmarks with one fit per (n, seed) bundle data-sample variance with generator-fit variance into a single confidence interval. The true total variance — across both sampling and fitting — is wider than reported. We document this as an open evaluation problem for GPT-2-based tabular synthesis benchmarks specifically; whether larger LLM-based synthesizers (e.g., REaLTabFormer, TabuLa) or non-GPT backends exhibit similar fit variance is not tested here.
+Second, and more methodologically consequential: we performed a natural experiment by running GReaT a second time on the same (n, seed) pairs as part of an unrelated α-sweep experiment. The two independent fits produced per-seed AUC differences of up to 12 percentage points on identical training data. Investigation traces the root cause to incomplete seeding: user-level `random_state` controls NumPy and scikit-learn random state, but PyTorch, CUDA, and Hugging Face Transformers maintain independent random states, and `fp16=True` GPU reductions remain non-deterministic even after `seed_everything()` is applied to all of these. The implication for the field is that published GReaT benchmarks with one fit per (n, seed) bundle data-sample variance with generator-fit variance into a single confidence interval. The true total variance — across both sampling and fitting — is wider than reported. We document this as an open evaluation problem for GPT-2-based tabular synthesis benchmarks specifically; whether larger LLM-based synthesizers (e.g., REaLTabFormer (Solatorio & Dupriez, 2023), TabuLa) or non-GPT backends exhibit similar fit variance is not tested here. The benchmark reproducibility implications are discussed in van Breugel et al. (2023) and Bouthillier et al. (2021).
 
 #### GReaT with Mistral-7B: Does a More Capable LLM Backbone Change the Outcome?
 
@@ -408,7 +408,7 @@ TabDDPM samples from the learned joint distribution unconditionally. At 0.2% pos
 
 This explanation is consistent with the §4.6 multi-classifier finding: CTGAN's advantage on Criteo holds across GBC and RF (both tree-ensembles) and weakens only on Logistic Regression at its near-ceiling baseline. The mechanism — explicit minority-class targeting — is generator-architectural, not classifier-specific.
 
-A practical corollary: if TabDDPM is to be made competitive in the extreme-imbalance regime, the relevant modification is a class-conditional sampling extension rather than additional training compute. Several recent variants (TabSyn, TabDiff) include such mechanisms; we did not evaluate them and cannot speak to their behavior on this regime.
+A practical corollary: if TabDDPM is to be made competitive in the extreme-imbalance regime, the relevant modification is a class-conditional sampling extension rather than additional training compute. Several recent variants (TabSyn, TabDiff (Shi et al., 2025)) include such mechanisms; we did not evaluate them and cannot speak to their behavior on this regime.
 
 The same unconditional-vs-conditional argument applies to GReaT (§4.7). GReaT fine-tunes an LLM to generate full rows from the learned distribution; at 0.9% positive rate, the LLM — whether GPT-2 or Mistral-7B — generates predominantly negative-class rows when sampled unconditionally. CTGAN's conditional vector directly addresses the minority-class scarcity that defines the imbalanced regime. The consistent finding across TabDDPM, GPT-2 GReaT, and Mistral-7B GReaT is that unconditional sampling does not solve the class-imbalance problem regardless of model architecture or capacity; conditional generation is the operative design choice.
 
@@ -478,23 +478,11 @@ Future work should extend this evaluation to causal/uplift settings (where augme
 
 12. **Fonseca, J., & Bacao, F.** (2023). Synthetic Data Generation for Imbalanced Learning on Tabular Data. *Expert Systems with Applications*. https://www.sciencedirect.com/article/pii/S0957417421000233
 
-13. **Camino, R. et al.** (2020). Oversampling Tabular Data with Deep Generative Models: Is it worth the effort? *ICML 2020 Workshop on Uncertainty & Robustness in Deep Learning*. https://proceedings.mlr.press/v137/camino20a/camino20a.pdf
-
-14. **Shidani, A., Farghly, T., Sun, Y., Ganjgahi, H., & Deligiannidis, G.** (2025). Beyond Real Data: Synthetic Data through the Lens of Regularization. *arXiv:2510.08095*. https://arxiv.org/abs/2510.08095
-
-15. **Chia, L. H.** (2025). Finding the Sweet Spot: Optimal Data Augmentation Ratio for Imbalanced Credit Scoring Using ADASYN. *arXiv:2510.18252*. https://arxiv.org/abs/2510.18252
-
-16. **Du, Y., & Li, N.** (2024). Systematic Assessment of Tabular Data Synthesis Algorithms. *arXiv:2402.06806*. https://arxiv.org/abs/2402.06806
-
-17. **Sidorenko, A., Platzer, M., Scriminaci, M., & Tiwald, P.** (2025). Benchmarking Synthetic Tabular Data: A Multi-Dimensional Evaluation Framework. *arXiv:2504.01908*. https://arxiv.org/abs/2504.01908
+13. **Sidorenko, A., Platzer, M., Scriminaci, M., & Tiwald, P.** (2025). Benchmarking Synthetic Tabular Data: A Multi-Dimensional Evaluation Framework. *arXiv:2504.01908*. https://arxiv.org/abs/2504.01908
 
 18. **Lautrup, A. D., Hyrup, T., & Zimek, A.** (2024). SynthEval: A Framework for Detailed Utility and Privacy Evaluation of Tabular Synthetic Data. *Data Mining and Knowledge Discovery*. arXiv:2404.15821. https://arxiv.org/abs/2404.15821
 
-19. **Shumailov, I., Shumaylov, Z., Zhao, Y., Papernot, N., Anderson, R., & Gal, Y.** (2024). AI models collapse when trained on recursively generated data. *Nature*, 631, 755–759. https://www.nature.com/articles/s41586-024-07566-y
-
-20. **Chen, K. et al.** (2025). Benchmarking Differentially Private Tabular Data Synthesis Methods. *arXiv:2504.14061*. https://arxiv.org/abs/2504.14061
-
-21. **Shi, J., Xu, M., Hua, W., Zhang, H., Ermon, S., & Leskovec, J.** (2025). TabDiff: a Mixed-type Diffusion Model for Tabular Data Generation. *ICLR 2025*. arXiv:2410.20626. https://arxiv.org/abs/2410.20626
+19. **Shi, J., Xu, M., Hua, W., Zhang, H., Ermon, S., & Leskovec, J.** (2025). TabDiff: a Mixed-type Diffusion Model for Tabular Data Generation. *ICLR 2025*. arXiv:2410.20626. https://arxiv.org/abs/2410.20626
 
 22. **Solatorio, A. V., & Dupriez, O.** (2023). REaLTabFormer: Generating Realistic Relational and Tabular Data using Transformers. *arXiv:2302.02041*. https://arxiv.org/abs/2302.02041
 
