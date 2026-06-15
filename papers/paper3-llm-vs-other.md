@@ -1,4 +1,4 @@
-# Scale Does Not Fix LLM-Based Tabular Synthesis: A Controlled Evaluation of GReaT Across Model Sizes and Data Regimes
+# GReaT Fails Regardless of LLM Backbone: A Controlled Comparison of GPT-2 and Mistral-7B Against Statistical Generators for Imbalanced Tabular Classification
 
 **Author:** Aditya Puttaparthi Tirumala
 **Date:** 2026-06-14
