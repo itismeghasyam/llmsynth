@@ -32,7 +32,7 @@ We evaluate five generators across seven datasets spanning positive rates from 0
 
 ## 3. Core Finding: Minority-Example Scarcity Drives Augmentation Value
 
-On the five datasets with 240+ minority examples (positive rate ≥ 11.7%), no generator exceeds +0.27 AUC points across any α value. On the two marketing datasets — Hillstrom (72 examples) and Criteo (16 examples) — CTGAN and SMOTE deliver +5.7 to +12.9 AUC points. A cross-dataset regression of best CTGAN gain on log(positive rate) yields R²=0.92 (directional, n=6).
+On the five datasets with 240+ minority examples (positive rate ≥ 11.7%), no generator exceeds +0.27 AUC points across any α value. On the two marketing datasets — Hillstrom (72 examples) and Criteo (16 examples) — CTGAN and SMOTE deliver +5.7 to +12.9 AUC points. A cross-dataset regression of best CTGAN gain on log(positive rate) yields R²=0.92 (directional, n=6). The 1%–10% positive-rate region is not represented in this regression and should not be inferred from it.
 
 A striking illustration: on Criteo, 7 of 10 MLP seeds failed to converge using real data alone (AUC < 0.15). After CTGAN augmentation, all 10 seeds converged (mean AUC 0.940). Augmentation in this regime is not a marginal improvement; it is the difference between a working classifier and one that fails to train.
 
@@ -56,7 +56,7 @@ CTGAN also outperforms `class_weight='balanced'` reweighting by +7.55 AUC points
 
 TabDDPM is the current state-of-the-art generator on general tabular benchmarks (Davila et al., 2025). We evaluate it at two training budgets: N_iter=2,000 (default) and N_iter=10,000 (5× extended). On both Hillstrom and Criteo, CTGAN outperforms TabDDPM at both budgets. Extended training widens the gap: TabDDPM at 10k goes uniformly negative on Hillstrom (all α values below baseline). The CTGAN advantage at extended training reaches d_z=1.25 on Hillstrom (p=0.049).
 
-Table 2 explains why: TabDDPM samples unconditionally at the natural positive rate. No amount of additional training changes the sampling distribution — it is an architectural property, not a training-budget artifact. Fit time: CTGAN ~2 min CPU; TabDDPM ~6–29 min GPU.
+Table 2 explains why: TabDDPM samples unconditionally at the natural positive rate. Increasing training budget did not alter the observed sampling distribution in our experiments, suggesting that the limitation is architectural rather than optimization-related. Fit time: CTGAN ~2 min CPU; TabDDPM ~6–29 min GPU.
 
 ---
 
