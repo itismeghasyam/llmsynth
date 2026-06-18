@@ -26,7 +26,7 @@ Table 1 makes the bottleneck concrete. Datasets with fewer than ~100 minority ex
 
 ## 2. Experimental Setup
 
-We evaluate five generators across seven datasets spanning positive rates from 0.2% to 30%: GaussianCopula (Patki et al., 2016), CTGAN (Xu et al., 2019), SMOTE (Chawla et al., 2002), TabDDPM (Kotelnikov et al., 2023), and GReaT (Borisov et al., 2023) at two LLM scales (GPT-2 117M and Mistral-7B 7B). Protocol: 80/20 stratified split, α-sweep over {0.1, 0.2, 0.3, 0.5, 1.0}, 5–10 seeds, GradientBoostingClassifier primary downstream model (Friedman, 2001; Pedregosa et al., 2011), extended to four classifier families for robustness. Primary metric: AUC-ROC.
+We evaluate five generators across seven datasets spanning positive rates from 0.2% to 30%: GaussianCopula (Patki et al., 2016), CTGAN (Xu et al., 2019), SMOTE (Chawla et al., 2002), TabDDPM (Kotelnikov et al., 2023), and GReaT (Borisov et al., 2023) at two LLM scales (GPT-2 117M and Mistral-7B 7B). Protocol: 80/20 stratified split, α-sweep over {0.1, 0.2, 0.3, 0.5, 1.0}, 5, 10 seeds, GradientBoostingClassifier primary downstream model (Friedman, 2001; Pedregosa et al., 2011), extended to four classifier families for robustness. Primary metric: AUC-ROC.
 
 ---
 
