@@ -1,6 +1,6 @@
 # Synthetic Data Augmentation in the Extreme-Imbalance Regime: Evidence from Marketing Classification
 
-*Short paper submitted to INFORMS Workshop on Data Science 2026*
+*Complete paper submitted to INFORMS Workshop on Data Science 2026*
 *[BLINDED FOR REVIEW — remove this line before submission]*
 
 ---
@@ -37,7 +37,12 @@ This paper answers that question empirically. We ran a controlled study across s
 | Nomao Lead | 28.3% | 8,000 | 2,264 | 0.991 ± 0.001 |
 
 
-\* Baseline AUC is calculated using a GradientBoosting classifier approach
+\* Baseline AUC is calculated using a GradientBoostingClassifier (n_estimators=100, max_depth=4)
+
+![Figure 1](../results/plots/paper2/fig11_minority_budget_vs_gain.png)
+
+**Figure 1 — Minority example budget vs. best augmentation gain (CTGAN).** Each point is one dataset. Gains collapse once minority examples exceed ~200. The two marketing datasets (Criteo: 16 examples, Hillstrom: 72 examples) sit in the regime where augmentation consistently helps.
+
 ## 2. Experimental Setup
 
 **Generators.** We evaluated five generators: GaussianCopula (Patki et al., 2016), CTGAN (Xu et al., 2019), SMOTE (Chawla et al., 2002), TabDDPM (Kotelnikov et al., 2023), and GReaT (Borisov et al., 2023) at two LLM scales — GPT-2 (117M parameters) and Mistral-7B (7B parameters). All generators run with library-default hyperparameters.
@@ -47,6 +52,16 @@ This paper answers that question empirically. We ran a controlled study across s
 1. **Baseline (TRTR):** Train on 80% real data, evaluate on 20% real holdout. This is the no-augmentation benchmark.
 2. **TSTR (Train on Synthetic, Test on Real):** Train entirely on synthetic data, evaluate on the real holdout. This tells us whether synthetic data can replace real data. Spoiler: it can't.
 3. **Augmentation sweep:** Fit the generator on the real training set, generate synthetic rows, combine with real training data, retrain, and compare to baseline.
+
+**Table 0 — TSTR gap: synthetic-only training always underperforms (single seed)**
+
+| Dataset | Baseline AUC | Best TSTR AUC | TSTR gap |
+|---|---|---|---|
+| Telco Churn | 0.837 | 0.803 (GaussianCopula) | −4.1% |
+| Bank Marketing | 0.909 | 0.750 (GaussianCopula) | −17.4% |
+| German Credit | 0.775 | 0.564 (GaussianCopula) | −27.2% |
+
+Across all three benchmark datasets, no generator closes the TSTR gap. Synthetic data can't replace real data — it can only supplement it. This confirms augmentation (condition 3) is the right framing.
 
 For the augmentation sweep, we controlled the synthetic fraction using **α = n_synthetic / n_real**. We swept α ∈ {0.1, 0.2, 0.3, 0.5, 1.0} — so α=0.2 adds 20% as many synthetic rows as real ones, and α=1.0 doubles the training set. We report the best-α result per generator.
 
@@ -68,7 +83,7 @@ For the augmentation sweep, we controlled the synthetic fraction using **α = n_
 
 Across the five datasets with a positive rate of 11.7% or higher, each of which contains at least 240 minority examples, we find that no generator improves on the baseline by more than +0.27 AUC points at any value of α. The picture changes on the two marketing datasets. On Hillstrom (72 minority examples) and Criteo (16 minority examples), CTGAN and SMOTE recover between +5.7 and +12.9 AUC points. We did not evaluate datasets in the 1%–10% positive-rate range, and we caution against extrapolating our results into that region.
 
-Criteo offers a useful illustration of what is at stake in this regime. Trained on real data alone, 7 of 10 MLP seeds failed to converge (AUC < 0.15). After CTGAN augmentation, all 10 seeds converged, with a mean AUC of 0.940 (95% CI). In this setting, augmentation is not a marginal refinement of an already-working model; it is what separates a classifier that trains from one that does not.
+Criteo offers a useful illustration of what is at stake in this regime. Trained on real data alone, 7 of 10 MLP seeds failed to converge (AUC < 0.15). After CTGAN augmentation, all 10 seeds converged, with a mean AUC of 0.940 ± 0.030 (95% CI). In this setting, augmentation is not a marginal refinement of an already-working model; it is what separates a classifier that trains from one that does not.
 
 **Table 2 — Synthetic positive rate by generator (5 seeds × 8,000 generated rows)**
 
@@ -80,7 +95,9 @@ Criteo offers a useful illustration of what is at stake in this regime. Trained 
 | **CTGAN** | **6.34% ± 0.21%** | **26.76% ± 1.18%** | **7–89× minority enrichment** |
 | SMOTE | 100% (minority only) | 100% (minority only) | Minority targeted by design |
 
-Table 2 points to a direct explanation for this performance gap. GaussianCopula and TabDDPM both sample at the natural positive rate of the data, so at a 0.2% positive rate roughly 99.8% of the rows they generate belong to the negative class, and the minority class is left no better represented than before. CTGAN behaves differently: its conditional vector produces 7–89× more positive-class rows than the training distribution contains. Because we observe these synthetic positive rates directly, the mechanism is measured rather than inferred.
+Table 2 points to a direct explanation for this performance gap. GaussianCopula and TabDDPM both sample at the natural positive rate of the data, so at a 0.2% positive rate roughly 99.8% of the rows they generate belong to the negative class, and the minority class is left no better represented than before. CTGAN behaves differently: during training, it conditions on each class using a log-frequency reweighted conditional vector, which causes it to learn — and sample — a much higher proportion of minority-class rows at inference time. This is why CTGAN generates 6.34% positive on Hillstrom (vs 0.90% real) and 26.76% on Criteo (vs 0.30% real). Because we observe these synthetic positive rates directly, the mechanism is measured rather than inferred.
+
+One note on how we report gains: all results show the **best gain across the α sweep** (maximum over α ∈ {0.1, 0.2, 0.3, 0.5, 1.0}). This is the best-case result for each generator, not the average. The actual gain at a randomly chosen α will typically be lower.
 
 For comparison, we also evaluated simple class reweighting (`class_weight='balanced'`) under the same 5-seed protocol, and CTGAN outperforms it by +7.55 AUC points on both datasets.
 
@@ -92,15 +109,12 @@ TabDDPM is currently the state-of-the-art generator on general tabular benchmark
 
 Table 2 again suggests why. TabDDPM samples unconditionally, at the natural positive rate of the data, and increasing the training budget did not change the sampling distribution we observed. This leads us to suspect that the limitation is architectural rather than a matter of insufficient optimization. The two generators also differ substantially in cost: CTGAN fits in roughly 2 minutes on CPU, whereas TabDDPM requires between 6 and 29 minutes on GPU.
 
-** What CPU (M1 Pro 2022 32GB)
-
-** What GPU (NVIDIA H100 x8)
 
 ---
 
 ## 5. LLM-Based Synthesis (GReaT)
 
-We next turn to GReaT (Borisov et al., 2023), which takes a different approach by fine-tuning a language model on serialized tabular rows. We evaluated it at two backbone scales, GPT-2 (117M parameters) and Mistral-7B (7B parameters), in order to ask whether a larger language model helps. We tested GReaT on three datasets chosen to separate two conditions: anonymized features, where feature names carry no meaning (German Credit), and semantic features at different levels of class balance (Hillstrom, with extreme imbalance, and Telco, which is balanced).
+We next turn to GReaT (Borisov et al., 2023), which takes a different approach: it converts each tabular row into a natural-language sentence (e.g., "recency is 6, history is 230.0, channel is 1, target is 0") and fine-tunes a causal language model to generate new rows by completing such sentences. We evaluated it at α=1.0 (n_synthetic = n_train) across two backbone scales — GPT-2 (117M parameters) and Mistral-7B (7B parameters) — in order to ask whether a larger, more capable language model changes the outcome. We tested GReaT on three datasets chosen to separate two conditions: anonymized features, where feature names carry no meaning (German Credit), and semantic features at different levels of class balance (Hillstrom, with extreme imbalance, and Telco, which is balanced).
 
 **Table 3 — GReaT vs CTGAN: AUC gain over baseline ± 95% CI (5 seeds)**
 
@@ -113,7 +127,7 @@ We next turn to GReaT (Borisov et al., 2023), which takes a different approach b
 | Hillstrom | Semantic + extreme imbalance, n=2000 | **−6.87 ± 4.61 pts** | −1.45 ± 4.35 pts | +5.75 pts |
 | Telco | Semantic + balanced, n=100 | −1.38 ± 3.44 pts | −2.15 ± 3.43 pts | +0.28 pts |
 
-†n=50 Mistral-7B on Hillstrom: 4/5 seeds failed to generate parseable rows (extreme imbalance + very small n). ‡Only 3 valid seeds; 2 seeds failed entirely.
+†n=50 Mistral-7B on Hillstrom: 4/5 seeds failed to generate parseable rows — excluded from analysis. ‡**Only 3 valid seeds** (2 seeds failed entirely); the wide CI of ±5.99 pts reflects this and this cell should not be used for strong inference.
 
 Three findings emerge from Table 3. First, on the anonymized dataset (German Credit), both backbone scales hurt performance consistently. This is what we would expect if the value of a language-model prior comes from the meaning of feature names, since that meaning is absent here. Second, on Hillstrom, where imbalance is extreme, GReaT does not merely fail to help but actively harms performance as n grows (GPT-2: −6.87 points at n=2,000, $d_z$=−4.40, FDR-significant, p=0.006). The most plausible reading is that, at a 0.9% positive rate, additional LLM-generated rows dilute the minority class rather than enrich it. Third, the larger backbone offers little: Mistral-7B is marginally less harmful than GPT-2 on German Credit at large n (−0.38 vs −3.00 points at n=500), but on Hillstrom and Telco both models fall below baseline in most conditions. On the extreme-imbalance datasets that matter for marketing, neither scale comes close to CTGAN.
 
